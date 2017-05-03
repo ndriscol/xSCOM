@@ -13,8 +13,9 @@ function Get-TargetResource
         [System.String]
         $SourcePath,
 
+        [parameter(Mandatory = $true)]
         [System.String]
-        $SourceFolder = "\SystemCenter2012R2\OperationsManager.en",
+        $SourceFolder,
 
         [parameter(Mandatory = $true)]
         [System.Management.Automation.PSCredential]
@@ -64,22 +65,38 @@ function Get-TargetResource
             $IdentifyingNumber = "{B9853D74-E2A7-446C-851D-5B5374671D0B}"
             $InstallRegVersion = "12"
         }
+
         "7.2.10015.0"
         {
             $IdentifyingNumber = "{E533B951-2CAA-454F-A186-383F203E591D}"
             $InstallRegVersion = "12"
         }
+
+        "7.2.11719.0"
+        {
+            $IdentifyingNumber = "{1199B530-E226-46DC-B7F4-7891D5AFCF22}"
+            $InstallRegVersion = "12"
+            $RegVersion = "3.0"
+        }
+
+        "7.2.11822.0"
+        {
+            $IdentifyingNumber = "{43C498CB-D391-4B07-9C03-85C4E8239102}"
+            $InstallRegVersion = "12"
+            $RegVersion = "3.0"
+        }
+
         Default
         {
             throw "Unknown version of Operations Manager!"
         }
     }
 
-    if(Get-WmiObject -Class Win32_Product | Where-Object {$_.IdentifyingNumber -eq $IdentifyingNumber})
+    if(Get-CimInstance -Classname CIM_Product | Where-Object {$_.IdentifyingNumber -eq $IdentifyingNumber})
     {
-        $InstallPath = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup" -Name "InstallDirectory").InstallDirectory
-        $ManagementServer = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup\WebConsole" -Name "DEFAULT_SERVER").DEFAULT_SERVER
-        $WebSiteID = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup\WebConsole" -Name "WEBSITE_ID").WEBSITE_ID
+        $InstallPath = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup" -Name "InstallDirectory" -ErrorAction SilentlyContinue).InstallDirectory
+        $ManagementServer = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup\WebConsole" -Name "DEFAULT_SERVER" -ErrorAction SilentlyContinue).DEFAULT_SERVER
+        $WebSiteID = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup\WebConsole" -Name "WEBSITE_ID" -ErrorAction SilentlyContinue).WEBSITE_ID
 
         $returnValue = @{
             Ensure = "Present"
@@ -116,8 +133,9 @@ function Set-TargetResource
         [System.String]
         $SourcePath,
 
+        [parameter(Mandatory = $true)]
         [System.String]
-        $SourceFolder = "\SystemCenter2012R2\OperationsManager.en",
+        $SourceFolder,
 
         [parameter(Mandatory = $true)]
         [System.Management.Automation.PSCredential]
@@ -160,6 +178,7 @@ function Set-TargetResource
     $Path = ResolvePath $Path
     $Version = (Get-Item -Path $Path).VersionInfo.ProductVersion
 
+
     switch($Version)
     {
         "7.1.10226.0"
@@ -172,11 +191,26 @@ function Set-TargetResource
             $IdentifyingNumber = "{E533B951-2CAA-454F-A186-383F203E591D}"
             $MSIdentifyingNumber = "{43C498CB-D391-4B07-9C03-85C4E8239102}"
         }
+
+        "7.2.11719.0"
+        {
+            $IdentifyingNumber = "{1199B530-E226-46DC-B7F4-7891D5AFCF22}"
+            $MSIdentifyingNumber = '{37FD1FC5-6150-4C09-8D85-B2741A733415}'
+        }
+
+        "7.2.11822.0"
+        {
+            $IdentifyingNumber = "{43C498CB-D391-4B07-9C03-85C4E8239102}"
+            $MSIdentifyingNumber = ''
+        }
+
         Default
         {
             throw "Unknown version of Operations Manager!"
         }
     }
+
+
 
     switch($Ensure)
     {
@@ -205,7 +239,7 @@ function Set-TargetResource
                 "EnableErrorReporting",
                 "SendODRReports"
             )
-            if(!(Get-WmiObject -Class Win32_Product | Where-Object {$_.IdentifyingNumber -eq $MSIdentifyingNumber}))
+            if(-not(Get-CimInstance -ClassName CIM_Product | Where-Object {$_.IdentifyingNumber -eq $MSIdentifyingNumber}))
             {
                 $ArgumentVars += @("ManagementServer")
             }
@@ -219,7 +253,7 @@ function Set-TargetResource
             }
             foreach($ArgumentVar in $ArgumentVars)
             {
-                if(!([String]::IsNullOrEmpty((Get-Variable -Name $ArgumentVar).Value)))
+                if(-not([String]::IsNullOrEmpty((Get-Variable -Name $ArgumentVar).Value)))
                 {
                     $Arguments += " /$ArgumentVar`:" + [Environment]::ExpandEnvironmentVariables((Get-Variable -Name $ArgumentVar).Value)
                 }
@@ -268,8 +302,9 @@ function Test-TargetResource
         [System.String]
         $SourcePath,
 
+        [parameter(Mandatory = $true)]
         [System.String]
-        $SourceFolder = "\SystemCenter2012R2\OperationsManager.en",
+        $SourceFolder,
 
         [parameter(Mandatory = $true)]
         [System.Management.Automation.PSCredential]

@@ -13,8 +13,9 @@ function Get-TargetResource
         [System.String]
         $SourcePath,
 
+        [parameter(Mandatory = $true)]
         [System.String]
-        $SourceFolder = "\SystemCenter2012R2\OperationsManager.en",
+        $SourceFolder,
 
         [parameter(Mandatory = $true)]
         [System.Management.Automation.PSCredential]
@@ -43,27 +44,38 @@ function Get-TargetResource
     $Path = ResolvePath $Path
     $Version = (Get-Item -Path $Path).VersionInfo.ProductVersion
 
+
     switch($Version)
     {
         "7.1.10226.0"
         {
             $IdentifyingNumber = "{041C3416-87CE-4B02-918E-6FDC95F241D3}"
-            $InstallRegVersion = "12"
         }
+
         "7.2.10015.0"
         {
             $IdentifyingNumber = "{F67729BD-18CF-4283-A6FC-F388A463EC01}"
-            $InstallRegVersion = "12"
         }
+
+        "7.2.11719.0"
+        {
+            $IdentifyingNumber = "{E072D8FC-CD31-4ABE-BD65-606965965426}"
+        }
+
+        "7.2.11822.0"
+        {
+            $IdentifyingNumber = "{43C498CB-D391-4B07-9C03-85C4E8239102}"
+        }
+
         Default
         {
             throw "Unknown version of Operations Manager!"
         }
     }
 
-    if(Get-WmiObject -Class Win32_Product | Where-Object {$_.IdentifyingNumber -eq $IdentifyingNumber})
+    if(Get-CimInstance -ClassName CIM_Product | Where-Object {$_.IdentifyingNumber -eq $IdentifyingNumber})
     {
-        $InstallPath = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup" -Name "InstallDirectory").InstallDirectory
+        $InstallPath = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup" -Name "InstallDirectory" -ErrorAction SilentlyContinue).InstallDirectory
 
         $returnValue = @{
             Ensure = "Present"
@@ -99,8 +111,9 @@ function Set-TargetResource
         [System.String]
         $SourcePath,
 
+        [parameter(Mandatory = $true)]
         [System.String]
-        $SourceFolder = "\SystemCenter2012R2\OperationsManager.en",
+        $SourceFolder,
 
         [parameter(Mandatory = $true)]
         [System.Management.Automation.PSCredential]
@@ -135,10 +148,22 @@ function Set-TargetResource
         {
             $IdentifyingNumber = "{041C3416-87CE-4B02-918E-6FDC95F241D3}"
         }
+
         "7.2.10015.0"
         {
             $IdentifyingNumber = "{F67729BD-18CF-4283-A6FC-F388A463EC01}"
         }
+
+        "7.2.11719.0"
+        {
+            $IdentifyingNumber = "{E072D8FC-CD31-4ABE-BD65-606965965426}"
+        }
+
+        "7.2.11822.0"
+        {
+            $IdentifyingNumber = "{43C498CB-D391-4B07-9C03-85C4E8239102}"
+        }
+
         Default
         {
             throw "Unknown version of Operations Manager!"
@@ -174,7 +199,7 @@ function Set-TargetResource
             )
             foreach($ArgumentVar in $ArgumentVars)
             {
-                if(!([String]::IsNullOrEmpty((Get-Variable -Name $ArgumentVar).Value)))
+                if(-not([String]::IsNullOrEmpty((Get-Variable -Name $ArgumentVar).Value)))
                 {
                     $Arguments += " /$ArgumentVar`:" + [Environment]::ExpandEnvironmentVariables((Get-Variable -Name $ArgumentVar).Value)
                 }
@@ -223,8 +248,9 @@ function Test-TargetResource
         [System.String]
         $SourcePath,
 
+        [parameter(Mandatory = $true)]
         [System.String]
-        $SourceFolder = "\SystemCenter2012R2\OperationsManager.en",
+        $SourceFolder,
 
         [parameter(Mandatory = $true)]
         [System.Management.Automation.PSCredential]
