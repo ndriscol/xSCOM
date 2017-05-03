@@ -94,10 +94,12 @@ function Get-TargetResource
 
     if(Get-CimInstance -ClassName CIM_Product | Where-Object {$_.IdentifyingNumber -eq $IdentifyingNumber})
     {
-        $InstallPath = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup" -Name "InstallDirectory").InstallDirectory
-        $ManagementServer = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Reporting" -Name "DefaultSDKServiceMachine").DefaultSDKServiceMachine
-        $SRSInstance = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Reporting" -Name "SRSInstance").SRSInstance
+      
+        $InstallPath = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup" -Name "InstallDirectory" -ErrorAction SilentlyContinue).InstallDirectory
+        $ManagementServer = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Reporting" -Name "DefaultSDKServiceMachine" -ErrorAction SilentlyContinue).DefaultSDKServiceMachine
+        $SRSInstance = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Reporting" -Name "SRSInstance" -ErrorAction SilentlyContinue).SRSInstance
         $InstanceName = $SRSInstance.Split("\")[1]
+
         if(($InstanceName -eq "MSSQLSERVER") -or ($InstanceName -eq $null))
         {
             $RSServiceName = "ReportServer"
