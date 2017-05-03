@@ -1,89 +1,90 @@
 function Get-TargetResource
 {
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-        [parameter(Mandatory = $true)]
-        [ValidateSet("Present","Absent")]
-        [System.String]
-        $Ensure = "Present",
+	[CmdletBinding()]
+	[OutputType([System.Collections.Hashtable])]
+	param
+	(
+		[parameter(Mandatory = $true)]
+		[ValidateSet("Present","Absent")]
+		[System.String]
+		$Ensure = "Present",
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $SourcePath,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$SourcePath,
 
-        [System.String]
-        $SourceFolder = "\SystemCenter2012R2\OperationsManager.en",
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$SourceFolder,
 
-        [parameter(Mandatory = $true)]
-        [System.Management.Automation.PSCredential]
-        $SetupCredential,
+		[parameter(Mandatory = $true)]
+		[System.Management.Automation.PSCredential]
+		$SetupCredential,
 
-        [System.String]
-        $ProductKey,
+		[System.String]
+		$ProductKey,
 
-        [System.String]
-        $InstallPath,
+		[System.String]
+		$InstallPath,
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $ManagementGroupName,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$ManagementGroupName,
 
-        [parameter(Mandatory = $true)]
-        [System.Boolean]
-        $FirstManagementServer,
+		[parameter(Mandatory = $true)]
+		[System.Boolean]
+		$FirstManagementServer,
 
-        [System.UInt16]
-        $ManagementServicePort = 5723,
+		[System.UInt16]
+		$ManagementServicePort = 5723,
 
-        [System.Management.Automation.PSCredential]
-        $ActionAccount,
+		[System.Management.Automation.PSCredential]
+		$ActionAccount,
 
-        [System.Management.Automation.PSCredential]
-        $DASAccount,
+		[System.Management.Automation.PSCredential]
+		$DASAccount,
 
-        [parameter(Mandatory = $true)]
-        [System.Management.Automation.PSCredential]
-        $DataReader,
+		[parameter(Mandatory = $true)]
+		[System.Management.Automation.PSCredential]
+		$DataReader,
 
-        [parameter(Mandatory = $true)]
-        [System.Management.Automation.PSCredential]
-        $DataWriter,
+		[parameter(Mandatory = $true)]
+		[System.Management.Automation.PSCredential]
+		$DataWriter,
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $SqlServerInstance,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$SqlServerInstance,
 
-        [System.String]
-        $DatabaseName = "OperationsManager",
+		[System.String]
+		$DatabaseName = "OperationsManager",
 
-        [System.UInt16]
-        $DatabaseSize = 1000,
+		[System.UInt16]
+		$DatabaseSize = 1000,
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $DwSqlServerInstance,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$DwSqlServerInstance,
 
-        [System.String]
-        $DwDatabaseName = "OperationsManagerDW",
+		[System.String]
+		$DwDatabaseName = "OperationsManagerDW",
 
-        [System.UInt16]
-        $DwDatabaseSize = 1000,
+		[System.UInt16]
+		$DwDatabaseSize = 1000,
 
-        [System.Byte]
-        $UseMicrosoftUpdate,
+		[System.Byte]
+		$UseMicrosoftUpdate,
 
-        [System.Byte]
-        $SendCEIPReports,
+		[System.Byte]
+		$SendCEIPReports,
 
-        [ValidateSet("Never","Queued","Always")]
-        [System.String]
-        $EnableErrorReporting = "Never",
+		[ValidateSet("Never","Queued","Always")]
+		[System.String]
+		$EnableErrorReporting = "Never",
 
-        [System.Byte]
-        $SendODRReports
-    )
+		[System.Byte]
+		$SendODRReports
+	)
 
     Import-Module $PSScriptRoot\..\..\xPDT.psm1
         
@@ -99,19 +100,35 @@ function Get-TargetResource
             $InstallRegVersion = "12"
             $RegVersion = "3.0"
         }
+
         "7.2.10015.0"
         {
             $IdentifyingNumber = "{43C498CB-D391-4B07-9C03-85C4E8239102}"
             $InstallRegVersion = "12"
             $RegVersion = "3.0"
         }
+
+        "7.2.11719.0"
+        {
+            $IdentifyingNumber = "{1199B530-E226-46DC-B7F4-7891D5AFCF22}"
+            $InstallRegVersion = "12"
+            $RegVersion = "3.0"
+        }
+
+        "7.2.11822.0"
+        {
+            $IdentifyingNumber = "{1199B530-E226-46DC-B7F4-7891D5AFCF22}"
+            $InstallRegVersion = "12"
+            $RegVersion = "3.0"
+        }
+
         Default
         {
             throw "Unknown version of Operations Manager!"
         }
     }
 
-    if(Get-WmiObject -Class Win32_Product | Where-Object {$_.IdentifyingNumber -eq $IdentifyingNumber})
+    if(Get-CimInstance -ClassName cim_product | Where-Object {$_.IdentifyingNumber -eq $IdentifyingNumber})
     {
         $InstallPath = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\System Center Operations Manager\$InstallRegVersion\Setup" -Name "InstallDirectory").InstallDirectory
         $MGs = Get-ChildItem -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Server Management Groups"
@@ -124,141 +141,142 @@ function Get-TargetResource
                 $ManagementServicePort = (Get-ItemProperty -Path $MGReg -Name "Port").Port
             }
         }
-        $ComputerName = $env:COMPUTERNAME + "." + (Get-WmiObject -Class Win32_ComputerSystem).Domain
-        if(!(Get-Module -Name OperationsManager))
+        $ComputerName = $env:COMPUTERNAME + "." + (Get-CimInstance -ClassName cim_ComputerSystem).Domain
+        if(-not(Get-Module -Name OperationsManager))
         {
             Import-Module "$InstallPath\PowerShell\OperationsManager"
         }
         if(Get-Module -Name OperationsManager)
         {
             $ManagementServer = Get-SCOMManagementServer -Name $ComputerName
-            $ActionAccountUsername = $ManagementServer.ActionAccountIdentity
+		    $ActionAccountUsername = $ManagementServer.ActionAccountIdentity
             $DRA = (Get-SCOMRunAsAccount -Name "Data Warehouse Report Deployment Account")
-            $DataReaderUsername = $DRA.Domain + "\" + $DRA.UserName
+		    $DataReaderUsername = $DRA.Domain + "\" + $DRA.UserName
             $DWA = (Get-SCOMRunAsAccount -Name "Data Warehouse Action Account")
-            $DataWriterUsername = $DWA.Domain + "\" + $DWA.UserName
+		    $DataWriterUsername = $DWA.Domain + "\" + $DWA.UserName
         }
-        $DASAccountUsername = (Get-WmiObject -Class Win32_Service | Where-Object {$_.Name -eq "OMSDK"}).StartName
-        $SqlServerInstance = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Setup" -Name "DatabaseServerName").DatabaseServerName
-        $DatabaseName = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Setup" -Name "DatabaseName").DatabaseName
-        $DwSqlServerInstance = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Setup" -Name "DataWarehouseDBServerName").DataWarehouseDBServerName
-        $DwDatabaseName = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Setup" -Name "DataWarehouseDBName").DataWarehouseDBName
+		$DASAccountUsername = (Get-CimInstance cim_service | Where-Object {$_.Name -eq "OMSDK"}).StartName
+		$SqlServerInstance = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Setup" -Name "DatabaseServerName").DatabaseServerName
+		$DatabaseName = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Setup" -Name "DatabaseName").DatabaseName
+		$DwSqlServerInstance = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Setup" -Name "DataWarehouseDBServerName").DataWarehouseDBServerName
+		$DwDatabaseName = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft Operations Manager\$RegVersion\Setup" -Name "DataWarehouseDBName").DataWarehouseDBName
 
         $returnValue = @{
-            Ensure = "Present"
-            SourcePath = $SourcePath
-            SourceFolder = $SourceFolder
-            InstallPath = $InstallPath
-            ManagementGroupName = $ManagementGroupName
-            ManagementServicePort = $ManagementServicePort
-            ActionAccountUsername = $ActionAccountUsername
-            DASAccountUsername = $DASAccountUsername
-            DataReaderUsername = $DataReaderUsername
-            DataWriterUsername = $DataWriterUsername
-            SqlServerInstance = $SqlServerInstance
-            DatabaseName = $DatabaseName
-            DwSqlServerInstance = $DwSqlServerInstance
-            DwDatabaseName = $DwDatabaseName
-        }
+		    Ensure = "Present"
+		    SourcePath = $SourcePath
+		    SourceFolder = $SourceFolder
+		    InstallPath = $InstallPath
+		    ManagementGroupName = $ManagementGroupName
+		    ManagementServicePort = $ManagementServicePort
+		    ActionAccountUsername = $ActionAccountUsername
+		    DASAccountUsername = $DASAccountUsername
+		    DataReaderUsername = $DataReaderUsername
+		    DataWriterUsername = $DataWriterUsername
+		    SqlServerInstance = $SqlServerInstance
+		    DatabaseName = $DatabaseName
+		    DwSqlServerInstance = $DwSqlServerInstance
+		    DwDatabaseName = $DwDatabaseName
+	    }
     }
     else
     {
-        $returnValue = @{
-            Ensure = "Absent"
-            SourcePath = $SourcePath
-            SourceFolder = $SourceFolder
-        }
+	    $returnValue = @{
+		    Ensure = "Absent"
+		    SourcePath = $SourcePath
+		    SourceFolder = $SourceFolder
+	    }
     }
     
-    $returnValue
+	$returnValue
 }
 
 
 function Set-TargetResource
 {
-    [CmdletBinding()]
-    param
-    (
-        [parameter(Mandatory = $true)]
-        [ValidateSet("Present","Absent")]
-        [System.String]
-        $Ensure = "Present",
+	[CmdletBinding()]
+	param
+	(
+		[parameter(Mandatory = $true)]
+		[ValidateSet("Present","Absent")]
+		[System.String]
+		$Ensure = "Present",
+
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$SourcePath,
 
         [parameter(Mandatory = $true)]
-        [System.String]
-        $SourcePath,
+		[System.String]
+		$SourceFolder,
 
-        [System.String]
-        $SourceFolder = "\SystemCenter2012R2\OperationsManager.en",
+		[parameter(Mandatory = $true)]
+		[System.Management.Automation.PSCredential]
+		$SetupCredential,
 
-        [parameter(Mandatory = $true)]
-        [System.Management.Automation.PSCredential]
-        $SetupCredential,
+		[System.String]
+		$ProductKey,
 
-        [System.String]
-        $ProductKey,
+		[System.String]
+		$InstallPath,
 
-        [System.String]
-        $InstallPath,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$ManagementGroupName,
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $ManagementGroupName,
+		[parameter(Mandatory = $true)]
+		[System.Boolean]
+		$FirstManagementServer,
 
-        [parameter(Mandatory = $true)]
-        [System.Boolean]
-        $FirstManagementServer,
+		[System.UInt16]
+		$ManagementServicePort = 5723,
 
-        [System.UInt16]
-        $ManagementServicePort = 5723,
+		[System.Management.Automation.PSCredential]
+		$ActionAccount,
 
-        [System.Management.Automation.PSCredential]
-        $ActionAccount,
+		[System.Management.Automation.PSCredential]
+		$DASAccount,
 
-        [System.Management.Automation.PSCredential]
-        $DASAccount,
+		[parameter(Mandatory = $true)]
+		[System.Management.Automation.PSCredential]
+		$DataReader,
 
-        [parameter(Mandatory = $true)]
-        [System.Management.Automation.PSCredential]
-        $DataReader,
+		[parameter(Mandatory = $true)]
+		[System.Management.Automation.PSCredential]
+		$DataWriter,
 
-        [parameter(Mandatory = $true)]
-        [System.Management.Automation.PSCredential]
-        $DataWriter,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$SqlServerInstance,
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $SqlServerInstance,
+		[System.String]
+		$DatabaseName = "OperationsManager",
 
-        [System.String]
-        $DatabaseName = "OperationsManager",
+		[System.UInt16]
+		$DatabaseSize = 1000,
 
-        [System.UInt16]
-        $DatabaseSize = 1000,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$DwSqlServerInstance,
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $DwSqlServerInstance,
+		[System.String]
+		$DwDatabaseName = "OperationsManagerDW",
 
-        [System.String]
-        $DwDatabaseName = "OperationsManagerDW",
+		[System.UInt16]
+		$DwDatabaseSize = 1000,
 
-        [System.UInt16]
-        $DwDatabaseSize = 1000,
+		[System.Byte]
+		$UseMicrosoftUpdate,
 
-        [System.Byte]
-        $UseMicrosoftUpdate,
+		[System.Byte]
+		$SendCEIPReports,
 
-        [System.Byte]
-        $SendCEIPReports,
+		[ValidateSet("Never","Queued","Always")]
+		[System.String]
+		$EnableErrorReporting = "Never",
 
-        [ValidateSet("Never","Queued","Always")]
-        [System.String]
-        $EnableErrorReporting = "Never",
-
-        [System.Byte]
-        $SendODRReports
-    )
+		[System.Byte]
+		$SendODRReports
+	)
 
     Import-Module $PSScriptRoot\..\..\xPDT.psm1
         
@@ -272,12 +290,30 @@ function Set-TargetResource
         {
             $IdentifyingNumber = "{C92727BE-BD12-4140-96A6-276BA4F60AC1}"
             $InstallRegVersion = "12"
+            $RegVersion = "3.0"
         }
+
         "7.2.10015.0"
         {
             $IdentifyingNumber = "{43C498CB-D391-4B07-9C03-85C4E8239102}"
             $InstallRegVersion = "12"
+            $RegVersion = "3.0"
         }
+
+        "7.2.11719.0"
+        {
+            $IdentifyingNumber = "{1199B530-E226-46DC-B7F4-7891D5AFCF22}"
+            $InstallRegVersion = "12"
+            $RegVersion = "3.0"
+        }
+
+        "7.2.11822.0"
+        {
+            $IdentifyingNumber = "{43C498CB-D391-4B07-9C03-85C4E8239102}"
+            $InstallRegVersion = "12"
+            $RegVersion = "3.0"
+        }
+
         Default
         {
             throw "Unknown version of Operations Manager!"
@@ -391,7 +427,7 @@ function Set-TargetResource
     WaitForWin32ProcessEnd -Path $Path -Arguments $Arguments -Credential $SetupCredential
 
     # Additional first Management Server "Present" actions
-    if(($Ensure -eq "Present") -and $FirstManagementServer -and (Get-WmiObject -Class Win32_Product | Where-Object {$_.IdentifyingNumber -eq $IdentifyingNumber}))
+    if(($Ensure -eq "Present") -and $FirstManagementServer -and (Get-CimInstance -ClassName cim_Product | Where-Object {$_.IdentifyingNumber -eq $IdentifyingNumber}))
     {
         # Set ProductKey
         if($PSBoundParameters.ContainsKey("ProductKey"))
@@ -449,94 +485,95 @@ function Set-TargetResource
 
 function Test-TargetResource
 {
-    [CmdletBinding()]
-    [OutputType([System.Boolean])]
-    param
-    (
-        [parameter(Mandatory = $true)]
-        [ValidateSet("Present","Absent")]
-        [System.String]
-        $Ensure = "Present",
+	[CmdletBinding()]
+	[OutputType([System.Boolean])]
+	param
+	(
+		[parameter(Mandatory = $true)]
+		[ValidateSet("Present","Absent")]
+		[System.String]
+		$Ensure = "Present",
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $SourcePath,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$SourcePath,
 
-        [System.String]
-        $SourceFolder = "\SystemCenter2012R2\OperationsManager.en",
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$SourceFolder,
 
-        [parameter(Mandatory = $true)]
-        [System.Management.Automation.PSCredential]
-        $SetupCredential,
+		[parameter(Mandatory = $true)]
+		[System.Management.Automation.PSCredential]
+		$SetupCredential,
 
-        [System.String]
-        $ProductKey,
+		[System.String]
+		$ProductKey,
 
-        [System.String]
-        $InstallPath,
+		[System.String]
+		$InstallPath,
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $ManagementGroupName,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$ManagementGroupName,
 
-        [parameter(Mandatory = $true)]
-        [System.Boolean]
-        $FirstManagementServer,
+		[parameter(Mandatory = $true)]
+		[System.Boolean]
+		$FirstManagementServer,
 
-        [System.UInt16]
-        $ManagementServicePort = 5723,
+		[System.UInt16]
+		$ManagementServicePort = 5723,
 
-        [System.Management.Automation.PSCredential]
-        $ActionAccount,
+		[System.Management.Automation.PSCredential]
+		$ActionAccount,
 
-        [System.Management.Automation.PSCredential]
-        $DASAccount,
+		[System.Management.Automation.PSCredential]
+		$DASAccount,
 
-        [parameter(Mandatory = $true)]
-        [System.Management.Automation.PSCredential]
-        $DataReader,
+		[parameter(Mandatory = $true)]
+		[System.Management.Automation.PSCredential]
+		$DataReader,
 
-        [parameter(Mandatory = $true)]
-        [System.Management.Automation.PSCredential]
-        $DataWriter,
+		[parameter(Mandatory = $true)]
+		[System.Management.Automation.PSCredential]
+		$DataWriter,
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $SqlServerInstance,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$SqlServerInstance,
 
-        [System.String]
-        $DatabaseName = "OperationsManager",
+		[System.String]
+		$DatabaseName = "OperationsManager",
 
-        [System.UInt16]
-        $DatabaseSize = 1000,
+		[System.UInt16]
+		$DatabaseSize = 1000,
 
-        [parameter(Mandatory = $true)]
-        [System.String]
-        $DwSqlServerInstance,
+		[parameter(Mandatory = $true)]
+		[System.String]
+		$DwSqlServerInstance,
 
-        [System.String]
-        $DwDatabaseName = "OperationsManagerDW",
+		[System.String]
+		$DwDatabaseName = "OperationsManagerDW",
 
-        [System.UInt16]
-        $DwDatabaseSize = 1000,
+		[System.UInt16]
+		$DwDatabaseSize = 1000,
 
-        [System.Byte]
-        $UseMicrosoftUpdate,
+		[System.Byte]
+		$UseMicrosoftUpdate,
 
-        [System.Byte]
-        $SendCEIPReports,
+		[System.Byte]
+		$SendCEIPReports,
 
-        [ValidateSet("Never","Queued","Always")]
-        [System.String]
-        $EnableErrorReporting = "Never",
+		[ValidateSet("Never","Queued","Always")]
+		[System.String]
+		$EnableErrorReporting = "Never",
 
-        [System.Byte]
-        $SendODRReports
-    )
+		[System.Byte]
+		$SendODRReports
+	)
 
-    $result = ((Get-TargetResource @PSBoundParameters).Ensure -eq $Ensure)
-    
-    $result
+	$result = ((Get-TargetResource @PSBoundParameters).Ensure -eq $Ensure)
+	
+	$result
 }
 
 
