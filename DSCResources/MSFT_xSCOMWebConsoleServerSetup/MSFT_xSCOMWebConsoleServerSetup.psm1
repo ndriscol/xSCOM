@@ -74,16 +74,14 @@ function Get-TargetResource
 
         "7.2.11719.0"
         {
-            $IdentifyingNumber = "{1199B530-E226-46DC-B7F4-7891D5AFCF22}"
+            $IdentifyingNumber = "{676EB643-C22A-4EEC-A8CF-13A0719056A5}"
             $InstallRegVersion = "12"
-            $RegVersion = "3.0"
         }
 
         "7.2.11822.0"
         {
             $IdentifyingNumber = "{43C498CB-D391-4B07-9C03-85C4E8239102}"
             $InstallRegVersion = "12"
-            $RegVersion = "3.0"
         }
 
         Default
@@ -194,7 +192,7 @@ function Set-TargetResource
 
         "7.2.11719.0"
         {
-            $IdentifyingNumber = "{1199B530-E226-46DC-B7F4-7891D5AFCF22}"
+            $IdentifyingNumber = "{676EB643-C22A-4EEC-A8CF-13A0719056A5}"
             $MSIdentifyingNumber = '{37FD1FC5-6150-4C09-8D85-B2741A733415}'
         }
 
